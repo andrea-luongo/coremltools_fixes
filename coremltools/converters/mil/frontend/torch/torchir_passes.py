@@ -120,7 +120,8 @@ def generate_tensor_assignment_ops(graph):
 
             nodes_to_fuse = tensor_to_node_sequence_mapping[node_input]
             source_tensor = nodes_to_fuse[0].inputs[0]
-            origin_name = source_tensor.split(TENSOR_ASSIGMENT_PREFIX)[0]
+            # origin_name = source_tensor.split(TENSOR_ASSIGMENT_PREFIX)[0]
+            origin_name = node.name.split(TENSOR_ASSIGMENT_PREFIX)[0]
 
             updated_tensor_count[origin_name] += 1
 
@@ -130,7 +131,8 @@ def generate_tensor_assignment_ops(graph):
             nodes_to_fuse_inputs = _construct_nodes_to_fuse_inputs(nodes_to_fuse)
             tensor_assign_node = InternalTorchIRNode(
                 node=None,
-                inputs=[source_tensor, update_value] + nodes_to_fuse_inputs,
+                # inputs=[source_tensor, update_value] + nodes_to_fuse_inputs,
+                inputs=[node_input, update_value] + nodes_to_fuse_inputs,
                 outputs=outputs,
                 kind=kind,
                 blocks=[],

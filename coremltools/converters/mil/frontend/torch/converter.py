@@ -156,13 +156,15 @@ class TorchConverter:
         self.output_names = get_output_names(self.outputs)
         self.opset_version = _target(opset_version) if opset_version is not None else None
         self.context = TranscriptionContext()
-
         raw_graph, params_dict = self._expand_and_optimize_ir(self.torchscript)
+        print("######## RAW GRAPH ################")
+        print([name for name in raw_graph.nodes()])
+        # print("########### PARAMS ###########")
+        # print([key for key in params_dict.keys()])
         self.params_dict = params_dict
         self.graph = InternalTorchIRGraph(
             raw_graph, params_dict, self.inputs, cut_at_symbols
         )
-
         # Apply Torch IR passes
         passes = [
             transform_inplace_ops,
@@ -171,9 +173,11 @@ class TorchConverter:
             remove_getattr_nodes,
             generate_tensor_assignment_ops,
         ]
-        for p in passes:
+        for idx, p in enumerate(passes):
             p(self.graph)
 
+        print("######## FINAL GRAPH ################")
+        print([name for name in self.graph.nodes])
         self.inputs = list(self.graph.inputs.values())
         self.torch_passes = torch_passes
         self._prog = Program()
@@ -219,6 +223,7 @@ class TorchConverter:
 
     def convert_const(self):
         for name, val in self.graph.params.items():
+            # print(name)
             if val.dtype == _np.uint8:
                 val = val.astype(_np.int32)
             const = mb.const(val=val, name=name)
@@ -249,11 +254,11 @@ class TorchConverter:
             # If @self.graph.inputs == @ssa_func_inputs this just adds the inputs
             # to the context.
             for internal_name, users_name in zip(
-                self.graph.inputs.keys(), ssa_func_inputs.keys()
+                    self.graph.inputs.keys(), ssa_func_inputs.keys()
             ):
                 input_var = ssa_func.inputs[users_name]
                 if (types.is_tensor(input_var.sym_type) or types.is_scalar(input_var.sym_type)) \
-                    and (input_var.dtype == types.fp16 or input_var.dtype == types.fp64):
+                        and (input_var.dtype == types.fp16 or input_var.dtype == types.fp64):
                     # cast the input var to float32
                     # We need to do this because the type inference is very buggy when started from
                     # float16/float64 typed inputs. Until that is fixed in the following radar
@@ -390,8 +395,7 @@ class TorchConverter:
             return tuple(list(module.__getstate__())[:-1])
 
         def _lower_graph_block(graph):
-            for node in list(graph.nodes()):
-
+            for idx, node in enumerate(list(graph.nodes())):
                 for block in node.blocks():
                     _lower_graph_block(block)
 
@@ -407,7 +411,12 @@ class TorchConverter:
                 _output = node.output()
                 attr_name = getattr(node, node.kindOf("name"))("name")
 
-                module = getattr(node_to_module_map[_input], attr_name)
+                try:
+                    module = getattr(node_to_module_map[_input], attr_name)
+                except:
+                    debug=1
+                    module = getattr(node_to_module_map[_input], attr_name)
+                    raise
                 node_to_module_map[_output] = module
 
                 input_prefix = node_to_prefix_map[_input]
