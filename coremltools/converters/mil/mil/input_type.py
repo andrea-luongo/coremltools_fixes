@@ -101,6 +101,9 @@ class InputSpec:
         # check vars sharing the same type_domain_id have the same dtype
         type_domain_group = {}
         var_to_input_name = {}
+        # print(op_name)
+        if op_name == "floor_div_12":
+            debug=1
         for name, var in candidate_kvs.items():
             input_type = self.input_types[name]
             if isinstance(input_type, TensorInputType) and input_type.type_domain_id is not None:

@@ -156,6 +156,8 @@ class Builder:
         logger.info(
             "Adding op '{}' of type {}".format(kwargs["name"], op_cls.__name__)
         )
+        if kwargs["name"] == "model.backbone.body.conv1.weight":
+            debug=1
         before_op = kwargs.get("before_op", None)
         # Shallow copy list inputs to ensure op inputs are immutable
         kwargs = {k: v if not isinstance(v, (list, tuple)) else v[:] for k, v in kwargs.items() if v is not None}

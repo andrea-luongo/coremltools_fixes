@@ -85,11 +85,12 @@ def tensor(primitive, shape):
         @val.setter
         def val(self, v):
             if not isinstance(v, np.ndarray):
-                raise ValueError(
-                    "tensor should have value of type ndarray, got {} instead".format(
-                        type(v)
-                    )
-                )
+                v = np.array(v)
+                #raise ValueError(
+                #    "tensor should have value of type ndarray, got {} instead".format(
+                #        type(v)
+                #    )
+                #)
 
             v_type = numpy_type_to_builtin_type(v.dtype)
             promoted_type = promote_types(v_type, primitive)

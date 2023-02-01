@@ -100,7 +100,7 @@ def convert_nodes(context, graph):
             raise RuntimeError(
                 "PyTorch convert function for op '{}' not implemented.".format(node.kind)
             )
-        if node.outputs[0] in ['boxes.4']:
+        if node.outputs[0] in ['boxes.4', 'keep2.1']:
             debug=1
         try:
             add_op(context, node)
@@ -1397,7 +1397,9 @@ def div(context, node):
 @register_torch_op(torch_alias=["floordiv"])
 def floor_divide(context, node):
     inputs = _get_inputs(context, node, expected=2)
-    div_res = mb.floor_div(x=inputs[0], y=inputs[1])
+    x = mb.cast(x=inputs[0], dtype="fp32")
+    y = mb.cast(x=inputs[1], dtype="fp32")
+    div_res = mb.floor_div(x=x, y=y)
     # Pytorch's floor_divide always returns fp32, even if the inputs are int
     res = mb.cast(x=div_res, dtype='fp32', name=node.name)
     context.add(res)
